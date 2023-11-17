@@ -1,0 +1,2 @@
+# `TempDB`
+TempDB is a drop-in replacement for [`go.etcd.io/bbolt`](https://pkg.go.dev/go.etcd.io/bbolt) and compatible with [`github.com/btcsuite/btcwallet/walletdb`](https://pkg.go.dev/github.com/btcsuite/btcwallet/walletdb). TempDB supports the browser so we cannot use the file system or `mmap`.

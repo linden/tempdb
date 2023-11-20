@@ -72,8 +72,8 @@ func (tx *Transaction) Commit() error {
 		return walletdb.ErrTxClosed
 	}
 
-	// set the state to the value of the transaction.
-	*tx.cursor = *tx.state
+	// copy the transaction state then update the database state.
+	*tx.cursor = *tx.state.Copy()
 
 	for _, f := range tx.listeners {
 		f()

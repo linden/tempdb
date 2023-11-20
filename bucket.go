@@ -20,6 +20,8 @@ type Bucket struct {
 }
 
 func (bkt *Bucket) Put(key, value []byte) error {
+	Logger.Debug("bucket put", "key", key, "value", value, "bucket id", bkt.id, "bucket key", bkt.key)
+
 	if key == nil {
 		return walletdb.ErrKeyRequired
 	}
@@ -29,10 +31,14 @@ func (bkt *Bucket) Put(key, value []byte) error {
 }
 
 func (bkt *Bucket) Get(key []byte) []byte {
+	Logger.Debug("bucket get", "key", key, "bucket id", bkt.id, "bucket key", bkt.key)
+
 	return bkt.value[string(key)]
 }
 
 func (bkt *Bucket) Delete(key []byte) error {
+	Logger.Debug("bucket delete", "key", key, "bucket id", bkt.id, "bucket key", bkt.key)
+
 	delete(bkt.value, string(key))
 	return nil
 }
@@ -55,6 +61,8 @@ func (bkt *Bucket) NestedReadBucket(key []byte) walletdb.ReadBucket {
 }
 
 func (bkt *Bucket) NestedReadWriteBucket(key []byte) walletdb.ReadWriteBucket {
+	Logger.Debug("bucket getting nested bucket", "key", key)
+
 	_, nbkt, ok := bkt.find(key)
 	if !ok {
 		return nil
@@ -64,6 +72,8 @@ func (bkt *Bucket) NestedReadWriteBucket(key []byte) walletdb.ReadWriteBucket {
 }
 
 func (bkt *Bucket) CreateBucket(key []byte) (walletdb.ReadWriteBucket, error) {
+	Logger.Debug("bucket create", "key", key)
+
 	if key == nil {
 		return nil, walletdb.ErrBucketNameRequired
 	}
@@ -99,6 +109,8 @@ func (bkt *Bucket) DeleteNestedBucket(key []byte) error {
 	if !ok {
 		return walletdb.ErrBucketNotFound
 	}
+
+	Logger.Debug("bucket delete nested", "deleted bucket key", key, "deleted bucket id", bkt.tx.state.buckets[i].id)
 
 	bkt.tx.state.buckets = append(bkt.tx.state.buckets[:i], bkt.tx.state.buckets[i+1:]...)
 

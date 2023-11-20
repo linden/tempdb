@@ -2,6 +2,7 @@ package tempdb
 
 import (
 	"errors"
+	"log/slog"
 	"io"
 
 	"github.com/btcsuite/btcwallet/walletdb"
@@ -12,16 +13,22 @@ var ErrUnimplemented = errors.New("unimplemented")
 // Ensure `DB` complies with the `walletdb.DB` interface.
 var _ walletdb.DB = (*DB)(nil)
 
+var Logger *slog.Logger
+
 type DB struct {
 	path  string
 	state *State
 }
 
 func (db *DB) BeginReadTx() (walletdb.ReadTx, error) {
-	return db.BeginReadWriteTx()
+	Logger.Debug("Beginning read transaction")
+
+	return newTransaction(db.state), nil
 }
 
 func (db *DB) BeginReadWriteTx() (walletdb.ReadWriteTx, error) {
+	Logger.Debug("Beginning read/write transaction")
+
 	return newTransaction(db.state), nil
 }
 
@@ -49,6 +56,7 @@ func (db *DB) Update(fn func(tx walletdb.ReadWriteTx) error, reset func()) error
 		return err
 	}
 
+	// TempDB Transaction
 	ttx, ok := tx.(*Transaction)
 	if !ok {
 		return errors.New("transaction is not a tempdb transaction")

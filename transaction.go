@@ -20,6 +20,8 @@ func (tx *Transaction) ReadBucket(key []byte) walletdb.ReadBucket {
 }
 
 func (tx *Transaction) ReadWriteBucket(key []byte) walletdb.ReadWriteBucket {
+	Logger.Debug("getting top level bucket", "key", key)
+
 	for _, bkt := range tx.state.buckets {
 		if bkt.parent != RootBucketID {
 			continue
@@ -49,6 +51,8 @@ func (tx *Transaction) ForEachBucket(f func(key []byte) error) error {
 }
 
 func (tx *Transaction) CreateTopLevelBucket(key []byte) (walletdb.ReadWriteBucket, error) {
+	Logger.Debug("creating top level bucket", "key", key)
+
 	return tx.createBucket(key, RootBucketID), nil
 }
 
@@ -68,6 +72,8 @@ func (tx *Transaction) DeleteTopLevelBucket(key []byte) error {
 }
 
 func (tx *Transaction) Commit() error {
+	Logger.Debug("commiting transaction", "tx", tx)
+
 	if tx.rollback {
 		return walletdb.ErrTxClosed
 	}

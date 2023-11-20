@@ -2,7 +2,6 @@ package tempdb
 
 import (
 	"bytes"
-	"math/rand"
 
 	"github.com/btcsuite/btcwallet/walletdb"
 )
@@ -125,8 +124,11 @@ func newTransaction(state *State) *Transaction {
 	// create a new transaction.
 	tx := &Transaction{
 		cursor: state,
-		id:     rand.Int(),
+		id:     state.nextTX,
 	}
+
+	// increment to next transaction ID.
+	state.nextTX += 1
 
 	// deep copy the state.
 	tx.state = state.Copy()

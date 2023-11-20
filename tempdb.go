@@ -2,8 +2,8 @@ package tempdb
 
 import (
 	"errors"
-	"log/slog"
 	"io"
+	"log/slog"
 
 	"github.com/btcsuite/btcwallet/walletdb"
 )
@@ -85,7 +85,7 @@ func (sl *DB) PrintStats() string {
 
 func New(args ...any) (walletdb.DB, error) {
 	if Logger == nil {
-		h := slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level:slog.LevelError})
+		h := slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelError})
 		Logger = slog.New(h)
 	}
 

@@ -2,9 +2,9 @@ package tempdb
 
 import (
 	"log/slog"
-	"testing"
-	"strconv"
 	"os"
+	"strconv"
+	"testing"
 
 	"github.com/btcsuite/btcwallet/walletdb/walletdbtest"
 )
@@ -16,7 +16,7 @@ func TestInterface(t *testing.T) {
 }
 
 func TestForEach(t *testing.T) {
-	h := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level:slog.LevelDebug})
+	h := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
 	Logger = slog.New(h)
 
 	db, err := New("/test")
@@ -40,7 +40,7 @@ func TestForEach(t *testing.T) {
 	}
 
 	for i := 0; i < 5; i++ {
-		key := strconv.Itoa(i)+"bkt"
+		key := strconv.Itoa(i) + "bkt"
 		nBkt.Put([]byte(key), []byte(key+"'s value"))
 	}
 }

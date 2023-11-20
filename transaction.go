@@ -125,7 +125,7 @@ func newTransaction(state *State) *Transaction {
 	// create a new transaction.
 	tx := &Transaction{
 		cursor: state,
-		id: rand.Int(),
+		id:     rand.Int(),
 	}
 
 	// deep copy the state.

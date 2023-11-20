@@ -37,9 +37,11 @@ func (bkt *Bucket) Delete(key []byte) error {
 	return nil
 }
 
-func (bkt *Bucket) ForEach(f func(k, v []byte) error) error {
-	for k, v := range bkt.value {
-		err := f([]byte(k), v)
+func (bkt *Bucket) ForEach(fn func(k, v []byte) error) error {
+	c := newCursor(bkt)
+
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		err := fn([]byte(k), v)
 		if err != nil {
 			return err
 		}

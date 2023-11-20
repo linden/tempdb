@@ -21,18 +21,20 @@ type DB struct {
 }
 
 func (db *DB) BeginReadTx() (walletdb.ReadTx, error) {
-	Logger.Debug("beginning read transaction")
+	Logger.Debug("begin read transaction")
 
 	return newTransaction(db.state), nil
 }
 
 func (db *DB) BeginReadWriteTx() (walletdb.ReadWriteTx, error) {
-	Logger.Debug("beginning read/write transaction")
+	Logger.Debug("begin read/write transaction")
 
 	return newTransaction(db.state), nil
 }
 
 func (db *DB) View(f func(tx walletdb.ReadTx) error, reset func()) error {
+	Logger.Debug("new view")
+
 	reset()
 
 	tx, err := db.BeginReadTx()
@@ -44,6 +46,8 @@ func (db *DB) View(f func(tx walletdb.ReadTx) error, reset func()) error {
 }
 
 func (db *DB) Update(fn func(tx walletdb.ReadWriteTx) error, reset func()) error {
+	Logger.Debug("new update")
+
 	reset()
 
 	tx, err := db.BeginReadWriteTx()
@@ -56,7 +60,7 @@ func (db *DB) Update(fn func(tx walletdb.ReadWriteTx) error, reset func()) error
 		return err
 	}
 
-	// TempDB Transaction
+	// cast to a TempDB transaction.
 	ttx, ok := tx.(*Transaction)
 	if !ok {
 		return errors.New("transaction is not a tempdb transaction")
@@ -85,8 +89,7 @@ func (sl *DB) PrintStats() string {
 
 func New(args ...any) (walletdb.DB, error) {
 	if Logger == nil {
-		h := slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelError})
-		Logger = slog.New(h)
+		Logger = slog.New(slog.NewTextHandler(io.Discard, nil))
 	}
 
 	if len(args) < 1 {

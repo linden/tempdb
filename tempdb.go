@@ -21,13 +21,13 @@ type DB struct {
 }
 
 func (db *DB) BeginReadTx() (walletdb.ReadTx, error) {
-	Logger.Debug("Beginning read transaction")
+	Logger.Debug("beginning read transaction")
 
 	return newTransaction(db.state), nil
 }
 
 func (db *DB) BeginReadWriteTx() (walletdb.ReadWriteTx, error) {
-	Logger.Debug("Beginning read/write transaction")
+	Logger.Debug("beginning read/write transaction")
 
 	return newTransaction(db.state), nil
 }
@@ -84,6 +84,11 @@ func (sl *DB) PrintStats() string {
 }
 
 func New(args ...any) (walletdb.DB, error) {
+	if Logger == nil {
+		h := slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level:slog.LevelError})
+		Logger = slog.New(h)
+	}
+
 	if len(args) < 1 {
 		return nil, errors.New("path argument is required")
 	}

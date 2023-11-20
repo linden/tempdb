@@ -20,7 +20,7 @@ type Bucket struct {
 }
 
 func (bkt *Bucket) Put(key, value []byte) error {
-	Logger.Debug("bucket put", "key", key, "value", value, "bucket id", bkt.id, "bucket key", bkt.key)
+	Logger.Debug("bucket put", "key", key, "value", value, "bucket id", bkt.id, "bucket key", bkt.key, "tx id", bkt.tx.id)
 
 	if key == nil {
 		return walletdb.ErrKeyRequired
@@ -31,22 +31,26 @@ func (bkt *Bucket) Put(key, value []byte) error {
 }
 
 func (bkt *Bucket) Get(key []byte) []byte {
-	Logger.Debug("bucket get", "key", key, "bucket id", bkt.id, "bucket key", bkt.key)
+	Logger.Debug("bucket get", "key", key, "bucket id", bkt.id, "bucket key", bkt.key, "tx id", bkt.tx.id)
 
 	return bkt.value[string(key)]
 }
 
 func (bkt *Bucket) Delete(key []byte) error {
-	Logger.Debug("bucket delete", "key", key, "bucket id", bkt.id, "bucket key", bkt.key)
+	Logger.Debug("bucket delete", "key", key, "bucket id", bkt.id, "bucket key", bkt.key, "tx id", bkt.tx.id)
 
 	delete(bkt.value, string(key))
 	return nil
 }
 
 func (bkt *Bucket) ForEach(fn func(k, v []byte) error) error {
+	Logger.Debug("bucket for each", "bucket key", bkt.key, "tx id", bkt.tx.id)
+
 	c := newCursor(bkt)
 
 	for k, v := c.First(); k != nil; k, v = c.Next() {
+		Logger.Debug("executing function as part of for each", "key", k, "value", v, "tx id", bkt.tx.id)
+
 		err := fn([]byte(k), v)
 		if err != nil {
 			return err
@@ -61,7 +65,7 @@ func (bkt *Bucket) NestedReadBucket(key []byte) walletdb.ReadBucket {
 }
 
 func (bkt *Bucket) NestedReadWriteBucket(key []byte) walletdb.ReadWriteBucket {
-	Logger.Debug("bucket getting nested bucket", "key", key)
+	Logger.Debug("bucket getting nested bucket", "key", key, "tx id", bkt.tx.id)
 
 	_, nbkt, ok := bkt.find(key)
 	if !ok {
@@ -72,7 +76,7 @@ func (bkt *Bucket) NestedReadWriteBucket(key []byte) walletdb.ReadWriteBucket {
 }
 
 func (bkt *Bucket) CreateBucket(key []byte) (walletdb.ReadWriteBucket, error) {
-	Logger.Debug("bucket create", "key", key)
+	Logger.Debug("bucket create", "key", key, "tx id", bkt.tx.id)
 
 	if key == nil {
 		return nil, walletdb.ErrBucketNameRequired
@@ -110,7 +114,7 @@ func (bkt *Bucket) DeleteNestedBucket(key []byte) error {
 		return walletdb.ErrBucketNotFound
 	}
 
-	Logger.Debug("bucket delete nested", "deleted bucket key", key, "deleted bucket id", bkt.tx.state.buckets[i].id)
+	Logger.Debug("bucket delete nested", "deleted bucket key", key, "deleted bucket id", bkt.tx.state.buckets[i].id, "tx id", bkt.tx.id)
 
 	bkt.tx.state.buckets = append(bkt.tx.state.buckets[:i], bkt.tx.state.buckets[i+1:]...)
 

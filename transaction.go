@@ -2,6 +2,7 @@ package tempdb
 
 import (
 	"bytes"
+	"math/rand"
 
 	"github.com/btcsuite/btcwallet/walletdb"
 )
@@ -9,6 +10,9 @@ import (
 type Transaction struct {
 	state  *State
 	cursor *State
+
+	// An identification to distinguish transactions for logging and debugging
+	id int
 
 	listeners []func()
 
@@ -20,7 +24,7 @@ func (tx *Transaction) ReadBucket(key []byte) walletdb.ReadBucket {
 }
 
 func (tx *Transaction) ReadWriteBucket(key []byte) walletdb.ReadWriteBucket {
-	Logger.Debug("getting top level bucket", "key", key)
+	Logger.Debug("getting top level bucket", "key", key, "tx id", tx.id)
 
 	for _, bkt := range tx.state.buckets {
 		if bkt.parent != RootBucketID {
@@ -51,7 +55,7 @@ func (tx *Transaction) ForEachBucket(f func(key []byte) error) error {
 }
 
 func (tx *Transaction) CreateTopLevelBucket(key []byte) (walletdb.ReadWriteBucket, error) {
-	Logger.Debug("creating top level bucket", "key", key)
+	Logger.Debug("creating top level bucket", "key", key, "tx id", tx.id)
 
 	return tx.createBucket(key, RootBucketID), nil
 }
@@ -72,7 +76,7 @@ func (tx *Transaction) DeleteTopLevelBucket(key []byte) error {
 }
 
 func (tx *Transaction) Commit() error {
-	Logger.Debug("commiting transaction", "tx", tx)
+	Logger.Debug("commiting transaction", "tx", tx, "tx id", tx.id)
 
 	if tx.rollback {
 		return walletdb.ErrTxClosed
@@ -121,6 +125,7 @@ func newTransaction(state *State) *Transaction {
 	// create a new transaction.
 	tx := &Transaction{
 		cursor: state,
+		id: rand.Int(),
 	}
 
 	// deep copy the state.

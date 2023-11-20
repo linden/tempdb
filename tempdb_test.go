@@ -9,6 +9,17 @@ import (
 	"github.com/btcsuite/btcwallet/walletdb/walletdbtest"
 )
 
+func TestMain(m *testing.M) {
+	// create a new logger.
+	h := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	})
+	Logger = slog.New(h)
+
+	// run the tests and forward the exit code.
+	os.Exit(m.Run())
+}
+
 func TestInterface(t *testing.T) {
 	Logger = slog.Default()
 
@@ -16,9 +27,6 @@ func TestInterface(t *testing.T) {
 }
 
 func TestForEach(t *testing.T) {
-	h := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
-	Logger = slog.New(h)
-
 	db, err := New("/test")
 	if err != nil {
 		t.Fatal(err)

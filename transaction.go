@@ -10,6 +10,8 @@ type Transaction struct {
 	state  *State
 	cursor *State
 
+	id int
+
 	listeners []func()
 
 	rollback bool
@@ -20,6 +22,8 @@ func (tx *Transaction) ReadBucket(key []byte) walletdb.ReadBucket {
 }
 
 func (tx *Transaction) ReadWriteBucket(key []byte) walletdb.ReadWriteBucket {
+	Logger.Debug("read/write top-level bucket", "bucket key", key, "transaction ID", tx.id)
+
 	for _, bkt := range tx.state.buckets {
 		if bkt.parent != RootBucketID {
 			continue
@@ -34,6 +38,8 @@ func (tx *Transaction) ReadWriteBucket(key []byte) walletdb.ReadWriteBucket {
 }
 
 func (tx *Transaction) ForEachBucket(f func(key []byte) error) error {
+	Logger.Debug("for each top-level bucket", "transaction ID", tx.id)
+
 	for _, bkt := range tx.state.buckets {
 		if bkt.parent != RootBucketID {
 			continue
@@ -49,10 +55,14 @@ func (tx *Transaction) ForEachBucket(f func(key []byte) error) error {
 }
 
 func (tx *Transaction) CreateTopLevelBucket(key []byte) (walletdb.ReadWriteBucket, error) {
+	Logger.Debug("creating top-level bucket", "bucket key", key, "transaction ID", tx.id)
+
 	return tx.createBucket(key, RootBucketID), nil
 }
 
 func (tx *Transaction) DeleteTopLevelBucket(key []byte) error {
+	Logger.Debug("delete top-level bucket", "bucket key", key, "transaction ID", tx.id)
+
 	for i, bkt := range tx.state.buckets {
 		if bkt.parent != RootBucketID {
 			continue
@@ -68,6 +78,8 @@ func (tx *Transaction) DeleteTopLevelBucket(key []byte) error {
 }
 
 func (tx *Transaction) Commit() error {
+	Logger.Debug("transaction commit", "transaction", tx, "transaction ID", tx.id)
+
 	if tx.rollback {
 		return walletdb.ErrTxClosed
 	}
@@ -87,6 +99,8 @@ func (tx *Transaction) OnCommit(f func()) {
 }
 
 func (tx *Transaction) Rollback() error {
+	Logger.Debug("transaction rollback", "transaction", tx, "transaction ID", tx.id)
+
 	if tx.rollback {
 		return walletdb.ErrTxClosed
 	}
@@ -108,6 +122,8 @@ func (tx *Transaction) createBucket(key []byte, parent BucketID) *Bucket {
 	// create the bucket and use the allocated ID.
 	bkt.id = tx.state.Add(bkt)
 
+	Logger.Debug("create bucket", "bucket key", key, "bucket ID", bkt.id, "parent ID", parent, "transaction ID", tx.id)
+
 	return &bkt
 }
 
@@ -115,7 +131,13 @@ func newTransaction(state *State) *Transaction {
 	// create a new transaction.
 	tx := &Transaction{
 		cursor: state,
+		id:     state.nextTX,
 	}
+
+	// increment to next transaction ID.
+	state.nextTX += 1
+
+	Logger.Debug("create transaction", "transaction ID", tx.id)
 
 	// deep copy the state.
 	tx.state = state.Copy()

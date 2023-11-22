@@ -29,23 +29,33 @@ func (c *Cursor) get(index int) ([]byte, []byte) {
 }
 
 func (c *Cursor) First() ([]byte, []byte) {
+	Logger.Debug("cursor first", "bucket ID", c.bucket.id)
+
 	return c.get(0)
 }
 
 func (c *Cursor) Last() ([]byte, []byte) {
+	Logger.Debug("cursor last", "bucket ID", c.bucket.id, "index", len(c.keys)-1)
+
 	return c.get(len(c.keys) - 1)
 }
 
 func (c *Cursor) Next() ([]byte, []byte) {
+	Logger.Debug("cursor next", "bucket ID", c.bucket.id, "index", c.index+1)
+
 	c.index++
 	return c.get(c.index)
 }
 
 func (c *Cursor) Prev() ([]byte, []byte) {
+	Logger.Debug("cursor prev", "bucket ID", c.bucket.id, "index", c.index-1)
+
 	return c.get(c.index - 1)
 }
 
 func (c *Cursor) Seek(seek []byte) ([]byte, []byte) {
+	Logger.Debug("cursor seek", "bucket ID", c.bucket.id, "length", len(seek))
+
 	var k []byte
 	var v []byte
 
@@ -72,6 +82,8 @@ func (c *Cursor) Seek(seek []byte) ([]byte, []byte) {
 }
 
 func (c *Cursor) Delete() error {
+	Logger.Debug("cursor delete", "bucket ID", c.bucket.id, "index", c.index)
+
 	k, _ := c.get(c.index)
 	if k == nil {
 		return errors.New("current index out of range")
@@ -81,6 +93,8 @@ func (c *Cursor) Delete() error {
 }
 
 func newCursor(bkt *Bucket) *Cursor {
+	Logger.Debug("new cursor", "bucket ID", bkt.id, "transaction ID", bkt.tx.id)
+
 	c := &Cursor{
 		bucket: bkt,
 	}

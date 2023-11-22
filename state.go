@@ -5,6 +5,7 @@ type BucketID uint64
 type State struct {
 	buckets []Bucket
 	next    BucketID
+	nextTX  int
 }
 
 const RootBucketID = BucketID(0)
@@ -21,7 +22,8 @@ func (s *State) Add(bkt Bucket) BucketID {
 func (s *State) Copy() *State {
 	// create a new state.
 	cpy := &State{
-		next: s.next,
+		next:   s.next,
+		nextTX: s.nextTX,
 	}
 
 	for _, bkt := range s.buckets {

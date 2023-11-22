@@ -87,6 +87,9 @@ func (bkt *Bucket) CreateBucket(key []byte) (walletdb.ReadWriteBucket, error) {
 		return nil, walletdb.ErrBucketExists
 	}
 
+	// add a new empty value. used for iteration.
+	bkt.Put(key, nil)
+
 	return bkt.tx.createBucket(key, bkt.id), nil
 }
 
@@ -119,6 +122,9 @@ func (bkt *Bucket) DeleteNestedBucket(key []byte) error {
 	}
 
 	bkt.tx.state.buckets = append(bkt.tx.state.buckets[:i], bkt.tx.state.buckets[i+1:]...)
+
+	// delete the empty value.
+	bkt.Delete(key)
 
 	return nil
 }

@@ -1,9 +1,9 @@
 package tempdb
 
 import (
-	"bytes"
+	"cmp"
 	"errors"
-	"sort"
+	"slices"
 )
 
 type pair struct {
@@ -54,31 +54,18 @@ func (c *Cursor) Prev() ([]byte, []byte) {
 }
 
 func (c *Cursor) Seek(seek []byte) ([]byte, []byte) {
-	Logger.Debug("cursor seek", "bucket ID", c.bucket.id, "length", len(seek))
+	Logger.Debug("cursor seek", "bucket ID", c.bucket.id, "seek", seek)
 
-	var k []byte
-	var v []byte
-
-	b := c.index
-	f := false
-
-	// iterate from the current index
-	for k, v = c.get(c.index); k != nil; k, v = c.Next() {
-		if bytes.Equal(k, seek) {
-			f = true
+	for i, k := range c.keys {
+		// check if the key is >= to seek.
+		if cmp.Compare(k, string(seek)) >= 0 {
+			// move to the index.
+			c.index = i
 			break
 		}
 	}
 
-	// return the next key/value if we can't find the key.
-
-	if !f {
-		c.index = b
-
-		return c.Next()
-	}
-
-	return k, v
+	return c.get(c.index)
 }
 
 func (c *Cursor) Delete() error {
@@ -105,7 +92,7 @@ func newCursor(bkt *Bucket) *Cursor {
 	}
 
 	// sort the keys lexicographically.
-	sort.Strings(c.keys)
+	slices.Sort(c.keys)
 
 	return c
 }

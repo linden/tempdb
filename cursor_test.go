@@ -11,54 +11,42 @@ var reset = func() {}
 
 // `walletdbtest.TestInterface` doesn't cover cursors, so we test them here instead.
 func TestCursor(t *testing.T) {
-	db, err := New("test.db")
+	db, err := New("cursor.db")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	err = db.Update(func(tx walletdb.ReadWriteTx) error {
-		bkt, err := tx.CreateTopLevelBucket([]byte("trees"))
+		bkt, err := tx.CreateTopLevelBucket([]byte("alphabet"))
 		if err != nil {
-			return err
+			t.Fatal(err)
 		}
 
-		err = bkt.Put([]byte("c"), nil)
-		if err != nil {
-			return err
+		// purposely unordered to ensure we reorder properly.
+		vals := [][]byte{
+			[]byte("c"),
+			[]byte("b"),
+			[]byte("a"),
+			[]byte("3"),
+			[]byte("2"),
+			[]byte("1"),
 		}
 
-		err = bkt.Put([]byte("b"), nil)
-		if err != nil {
-			return err
+		// populate the example values.
+		for _, v := range vals {
+			err = bkt.Put(v, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
 		}
 
-		err = bkt.Put([]byte("a"), nil)
-		if err != nil {
-			return err
-		}
-
-		err = bkt.Put([]byte("3"), nil)
-		if err != nil {
-			return err
-		}
-
-		err = bkt.Put([]byte("2"), nil)
-		if err != nil {
-			return err
-		}
-
-		err = bkt.Put([]byte("1"), nil)
-		if err != nil {
-			return err
-		}
-
-		ex := []string{
-			"1",
-			"2",
-			"3",
-			"a",
-			"b",
-			"c",
+		ex := [][]byte{
+			[]byte("1"),
+			[]byte("2"),
+			[]byte("3"),
+			[]byte("a"),
+			[]byte("b"),
+			[]byte("c"),
 		}
 
 		c := bkt.ReadCursor()
@@ -66,7 +54,7 @@ func TestCursor(t *testing.T) {
 		i := 0
 
 		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			if ex[i] != string(k) {
+			if !bytes.Equal(ex[i], k) {
 				t.Fatalf("unexpected order: expected %s got %s", ex[i], k)
 			}
 

@@ -107,7 +107,7 @@ func New(args ...any) (walletdb.DB, error) {
 	}, nil
 }
 
-// Open returns ErrDbDoesNotExist, because tempdb is not yet perisitent
+// Open always returns `walletdb.ErrDbDoesNotExist` because tempdb is not persistent.
 func Open(args ...any) (walletdb.DB, error) {
 	return nil, walletdb.ErrDbDoesNotExist
 }

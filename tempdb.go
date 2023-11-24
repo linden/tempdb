@@ -107,12 +107,17 @@ func New(args ...any) (walletdb.DB, error) {
 	}, nil
 }
 
+// Open always returns `walletdb.ErrDbDoesNotExist` because tempdb is not persistent.
+func Open(args ...any) (walletdb.DB, error) {
+	return nil, walletdb.ErrDbDoesNotExist
+}
+
 func init() {
 	err := walletdb.RegisterDriver(walletdb.Driver{
 		DbType: "tempdb",
 
 		Create: New,
-		Open:   New,
+		Open:   Open,
 	})
 
 	if err != nil {

@@ -10,41 +10,41 @@ import (
 type Bucket struct {
 	tx *Transaction
 
-	id     BucketID
-	parent BucketID
+	ID     BucketID
+	Parent BucketID
 
-	key   []byte
-	value map[string][]byte
+	Key   []byte
+	Value map[string][]byte
 
 	sequence uint64
 }
 
 func (bkt *Bucket) Put(key, value []byte) error {
-	Logger.Debug("bucket put", "key", key, "value", value, "bucket ID", bkt.id)
+	Logger.Debug("bucket put", "key", key, "value", value, "bucket ID", bkt.ID)
 
 	if key == nil {
 		return walletdb.ErrKeyRequired
 	}
 
-	bkt.value[string(key)] = value
+	bkt.Value[string(key)] = value
 	return nil
 }
 
 func (bkt *Bucket) Get(key []byte) []byte {
-	Logger.Debug("bucket get", "key", key, "bucket ID", bkt.id)
+	Logger.Debug("bucket get", "key", key, "bucket ID", bkt.ID)
 
-	return bkt.value[string(key)]
+	return bkt.Value[string(key)]
 }
 
 func (bkt *Bucket) Delete(key []byte) error {
-	Logger.Debug("bucket delete", "key", key, "bucket ID", bkt.id)
+	Logger.Debug("bucket delete", "key", key, "bucket ID", bkt.ID)
 
-	delete(bkt.value, string(key))
+	delete(bkt.Value, string(key))
 	return nil
 }
 
 func (bkt *Bucket) ForEach(fn func(k, v []byte) error) error {
-	Logger.Debug("bucket for each", "bucket ID", bkt.id)
+	Logger.Debug("bucket for each", "bucket ID", bkt.ID)
 
 	c := newCursor(bkt)
 
@@ -59,13 +59,13 @@ func (bkt *Bucket) ForEach(fn func(k, v []byte) error) error {
 }
 
 func (bkt *Bucket) NestedReadBucket(key []byte) walletdb.ReadBucket {
-	Logger.Debug("create nested read bucket", "key", key, "parent ID", bkt.id)
+	Logger.Debug("create nested read bucket", "key", key, "parent ID", bkt.ID)
 
 	return bkt.NestedReadWriteBucket(key)
 }
 
 func (bkt *Bucket) NestedReadWriteBucket(key []byte) walletdb.ReadWriteBucket {
-	Logger.Debug("create nested read/write bucket", "key", key, "parent ID", bkt.id)
+	Logger.Debug("create nested read/write bucket", "key", key, "parent ID", bkt.ID)
 
 	_, nbkt, ok := bkt.find(key)
 	if !ok {
@@ -76,7 +76,7 @@ func (bkt *Bucket) NestedReadWriteBucket(key []byte) walletdb.ReadWriteBucket {
 }
 
 func (bkt *Bucket) CreateBucket(key []byte) (walletdb.ReadWriteBucket, error) {
-	Logger.Debug("create bucket", "key", key, "parent ID", bkt.id)
+	Logger.Debug("create bucket", "key", key, "parent ID", bkt.ID)
 
 	if key == nil {
 		return nil, walletdb.ErrBucketNameRequired
@@ -90,11 +90,11 @@ func (bkt *Bucket) CreateBucket(key []byte) (walletdb.ReadWriteBucket, error) {
 	// add a new empty value. used for iteration.
 	bkt.Put(key, nil)
 
-	return bkt.tx.createBucket(key, bkt.id), nil
+	return bkt.tx.createBucket(key, bkt.ID), nil
 }
 
 func (bkt *Bucket) CreateBucketIfNotExists(key []byte) (walletdb.ReadWriteBucket, error) {
-	Logger.Debug("create bucket (if not exists)", "key", key, "parent ID", bkt.id)
+	Logger.Debug("create bucket (if not exists)", "key", key, "parent ID", bkt.ID)
 
 	nbkt := bkt.NestedReadWriteBucket(key)
 	if nbkt != nil {
@@ -110,7 +110,7 @@ func (bkt *Bucket) CreateBucketIfNotExists(key []byte) (walletdb.ReadWriteBucket
 }
 
 func (bkt *Bucket) DeleteNestedBucket(key []byte) error {
-	Logger.Debug("delete nested bucket", "key", key, "parent ID", bkt.id)
+	Logger.Debug("delete nested bucket", "key", key, "parent ID", bkt.ID)
 
 	if key == nil {
 		return walletdb.ErrIncompatibleValue
@@ -121,7 +121,7 @@ func (bkt *Bucket) DeleteNestedBucket(key []byte) error {
 		return walletdb.ErrBucketNotFound
 	}
 
-	bkt.tx.state.buckets = append(bkt.tx.state.buckets[:i], bkt.tx.state.buckets[i+1:]...)
+	bkt.tx.State.Buckets = append(bkt.tx.State.Buckets[:i], bkt.tx.State.Buckets[i+1:]...)
 
 	// delete the empty value.
 	bkt.Delete(key)
@@ -148,31 +148,31 @@ func (bkt *Bucket) Sequence() uint64 {
 }
 
 func (bkt *Bucket) ReadCursor() walletdb.ReadCursor {
-	Logger.Debug("create read cursor", "parent ID", bkt.id)
+	Logger.Debug("create read cursor", "parent ID", bkt.ID)
 
 	return newCursor(bkt)
 }
 
 func (bkt *Bucket) ReadWriteCursor() walletdb.ReadWriteCursor {
-	Logger.Debug("create read/write cursor", "parent ID", bkt.id)
+	Logger.Debug("create read/write cursor", "parent ID", bkt.ID)
 
 	return newCursor(bkt)
 }
 
 func (bkt *Bucket) find(key []byte) (int, *Bucket, bool) {
-	for i, nbkt := range bkt.tx.state.buckets {
+	for i, nbkt := range bkt.tx.State.Buckets {
 		// ensure the bucket is not the root bucket.
-		if nbkt.parent == RootBucketID {
+		if nbkt.Parent == RootBucketID {
 			continue
 		}
 
 		// ensure the bucket is nested in the current bucket.
-		if nbkt.parent != bkt.id {
+		if nbkt.Parent != bkt.ID {
 			continue
 		}
 
 		// ensure the key matches.
-		if !bytes.Equal(nbkt.key, key) {
+		if !bytes.Equal(nbkt.Key, key) {
 			continue
 		}
 

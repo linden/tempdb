@@ -7,14 +7,14 @@ import (
 )
 
 type Transaction struct {
-	state  *State
+	State  *State
 	cursor *State
 
-	id int
+	ID int
 
 	listeners []func()
 
-	rollback bool
+	Rolledback bool
 }
 
 func (tx *Transaction) ReadBucket(key []byte) walletdb.ReadBucket {
@@ -22,14 +22,14 @@ func (tx *Transaction) ReadBucket(key []byte) walletdb.ReadBucket {
 }
 
 func (tx *Transaction) ReadWriteBucket(key []byte) walletdb.ReadWriteBucket {
-	Logger.Debug("read/write top-level bucket", "bucket key", key, "transaction ID", tx.id)
+	Logger.Debug("read/write top-level bucket", "bucket key", key, "transaction ID", tx.ID)
 
-	for _, bkt := range tx.state.buckets {
-		if bkt.parent != RootBucketID {
+	for _, bkt := range tx.State.Buckets {
+		if bkt.Parent != RootBucketID {
 			continue
 		}
 
-		if bytes.Equal(bkt.key, key) {
+		if bytes.Equal(bkt.Key, key) {
 			return &bkt
 		}
 	}
@@ -38,14 +38,14 @@ func (tx *Transaction) ReadWriteBucket(key []byte) walletdb.ReadWriteBucket {
 }
 
 func (tx *Transaction) ForEachBucket(f func(key []byte) error) error {
-	Logger.Debug("for each top-level bucket", "transaction ID", tx.id)
+	Logger.Debug("for each top-level bucket", "transaction ID", tx.ID)
 
-	for _, bkt := range tx.state.buckets {
-		if bkt.parent != RootBucketID {
+	for _, bkt := range tx.State.Buckets {
+		if bkt.Parent != RootBucketID {
 			continue
 		}
 
-		err := f(bkt.key)
+		err := f(bkt.Key)
 		if err != nil {
 			return err
 		}
@@ -55,21 +55,21 @@ func (tx *Transaction) ForEachBucket(f func(key []byte) error) error {
 }
 
 func (tx *Transaction) CreateTopLevelBucket(key []byte) (walletdb.ReadWriteBucket, error) {
-	Logger.Debug("creating top-level bucket", "bucket key", key, "transaction ID", tx.id)
+	Logger.Debug("creating top-level bucket", "bucket key", key, "transaction ID", tx.ID)
 
 	return tx.createBucket(key, RootBucketID), nil
 }
 
 func (tx *Transaction) DeleteTopLevelBucket(key []byte) error {
-	Logger.Debug("delete top-level bucket", "bucket key", key, "transaction ID", tx.id)
+	Logger.Debug("delete top-level bucket", "bucket key", key, "transaction ID", tx.ID)
 
-	for i, bkt := range tx.state.buckets {
-		if bkt.parent != RootBucketID {
+	for i, bkt := range tx.State.Buckets {
+		if bkt.Parent != RootBucketID {
 			continue
 		}
 
-		if bytes.Equal(bkt.key, key) {
-			tx.state.buckets = append(tx.state.buckets[:i], tx.state.buckets[i+1:]...)
+		if bytes.Equal(bkt.Key, key) {
+			tx.State.Buckets = append(tx.State.Buckets[:i], tx.State.Buckets[i+1:]...)
 			break
 		}
 	}
@@ -78,14 +78,14 @@ func (tx *Transaction) DeleteTopLevelBucket(key []byte) error {
 }
 
 func (tx *Transaction) Commit() error {
-	Logger.Debug("transaction commit", "transaction", tx, "transaction ID", tx.id)
+	Logger.Debug("transaction commit", "transaction", tx, "transaction ID", tx.ID)
 
-	if tx.rollback {
+	if tx.Rolledback {
 		return walletdb.ErrTxClosed
 	}
 
 	// copy the transaction state then update the database state.
-	*tx.cursor = *tx.state.Copy()
+	*tx.cursor = *tx.State.Copy()
 
 	for _, f := range tx.listeners {
 		f()
@@ -99,13 +99,13 @@ func (tx *Transaction) OnCommit(f func()) {
 }
 
 func (tx *Transaction) Rollback() error {
-	Logger.Debug("transaction rollback", "transaction", tx, "transaction ID", tx.id)
+	Logger.Debug("transaction rollback", "transaction", tx, "transaction ID", tx.ID)
 
-	if tx.rollback {
+	if tx.Rolledback {
 		return walletdb.ErrTxClosed
 	}
 
-	tx.rollback = true
+	tx.Rolledback = true
 	return nil
 }
 
@@ -113,16 +113,16 @@ func (tx *Transaction) createBucket(key []byte, parent BucketID) *Bucket {
 	bkt := Bucket{
 		tx: tx,
 
-		key:   key,
-		value: make(map[string][]byte),
+		Key:   key,
+		Value: make(map[string][]byte),
 
-		parent: parent,
+		Parent: parent,
 	}
 
 	// create the bucket and use the allocated ID.
-	bkt.id = tx.state.Add(bkt)
+	bkt.ID = tx.State.Add(bkt)
 
-	Logger.Debug("create bucket", "bucket key", key, "bucket ID", bkt.id, "parent ID", parent, "transaction ID", tx.id)
+	Logger.Debug("create bucket", "bucket key", key, "bucket ID", bkt.ID, "parent ID", parent, "transaction ID", tx.ID)
 
 	return &bkt
 }
@@ -131,21 +131,21 @@ func newTransaction(state *State) *Transaction {
 	// create a new transaction.
 	tx := &Transaction{
 		cursor: state,
-		id:     state.nextTX,
+		ID:     state.nextTX,
 	}
 
 	// increment to next transaction ID.
 	state.nextTX += 1
 
-	Logger.Debug("create transaction", "transaction ID", tx.id)
+	Logger.Debug("create transaction", "transaction ID", tx.ID)
 
 	// deep copy the state.
-	tx.state = state.Copy()
+	tx.State = state.Copy()
 
 	// update the underlying transaction in each bucket.
-	for i, bkt := range tx.state.buckets {
+	for i, bkt := range tx.State.Buckets {
 		bkt.tx = tx
-		tx.state.buckets[i] = bkt
+		tx.State.Buckets[i] = bkt
 	}
 
 	return tx

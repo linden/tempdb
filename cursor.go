@@ -23,38 +23,38 @@ func (c *Cursor) get(index int) ([]byte, []byte) {
 	}
 
 	k := c.keys[index]
-	v := c.bucket.value[k]
+	v := c.bucket.Value[k]
 
 	return []byte(k), v
 }
 
 func (c *Cursor) First() ([]byte, []byte) {
-	Logger.Debug("cursor first", "bucket ID", c.bucket.id)
+	Logger.Debug("cursor first", "bucket ID", c.bucket.ID)
 
 	return c.get(0)
 }
 
 func (c *Cursor) Last() ([]byte, []byte) {
-	Logger.Debug("cursor last", "bucket ID", c.bucket.id, "index", len(c.keys)-1)
+	Logger.Debug("cursor last", "bucket ID", c.bucket.ID, "index", len(c.keys)-1)
 
 	return c.get(len(c.keys) - 1)
 }
 
 func (c *Cursor) Next() ([]byte, []byte) {
-	Logger.Debug("cursor next", "bucket ID", c.bucket.id, "index", c.index+1)
+	Logger.Debug("cursor next", "bucket ID", c.bucket.ID, "index", c.index+1)
 
 	c.index++
 	return c.get(c.index)
 }
 
 func (c *Cursor) Prev() ([]byte, []byte) {
-	Logger.Debug("cursor prev", "bucket ID", c.bucket.id, "index", c.index-1)
+	Logger.Debug("cursor prev", "bucket ID", c.bucket.ID, "index", c.index-1)
 
 	return c.get(c.index - 1)
 }
 
 func (c *Cursor) Seek(seek []byte) ([]byte, []byte) {
-	Logger.Debug("cursor seek", "bucket ID", c.bucket.id, "seek", seek)
+	Logger.Debug("cursor seek", "bucket ID", c.bucket.ID, "seek", seek)
 
 	for i, k := range c.keys {
 		// check if the key is >= to seek.
@@ -69,7 +69,7 @@ func (c *Cursor) Seek(seek []byte) ([]byte, []byte) {
 }
 
 func (c *Cursor) Delete() error {
-	Logger.Debug("cursor delete", "bucket ID", c.bucket.id, "index", c.index)
+	Logger.Debug("cursor delete", "bucket ID", c.bucket.ID, "index", c.index)
 
 	k, _ := c.get(c.index)
 	if k == nil {
@@ -80,14 +80,14 @@ func (c *Cursor) Delete() error {
 }
 
 func newCursor(bkt *Bucket) *Cursor {
-	Logger.Debug("new cursor", "bucket ID", bkt.id, "transaction ID", bkt.tx.id)
+	Logger.Debug("new cursor", "bucket ID", bkt.ID, "transaction ID", bkt.tx.ID)
 
 	c := &Cursor{
 		bucket: bkt,
 	}
 
 	// add every key to a slice.
-	for k, _ := range c.bucket.value {
+	for k, _ := range c.bucket.Value {
 		c.keys = append(c.keys, k)
 	}
 

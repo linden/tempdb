@@ -3,7 +3,7 @@ package tempdb
 type BucketID uint64
 
 type State struct {
-	buckets []Bucket
+	Buckets []Bucket
 	next    BucketID
 	nextTX  int
 }
@@ -12,10 +12,10 @@ const RootBucketID = BucketID(0)
 
 func (s *State) Add(bkt Bucket) BucketID {
 	s.next++
-	bkt.id = s.next
-	s.buckets = append(s.buckets, bkt)
+	bkt.ID = s.next
+	s.Buckets = append(s.Buckets, bkt)
 
-	return bkt.id
+	return bkt.ID
 }
 
 // perform a deep copy.
@@ -26,26 +26,26 @@ func (s *State) Copy() *State {
 		nextTX: s.nextTX,
 	}
 
-	for _, bkt := range s.buckets {
+	for _, bkt := range s.Buckets {
 		// create a new bucket, shallow-copying most values.
 		cbkt := Bucket{
-			id:     bkt.id,
-			parent: bkt.parent,
+			ID:     bkt.ID,
+			Parent: bkt.Parent,
 
-			key:      bkt.key,
+			Key:      bkt.Key,
 			sequence: bkt.sequence,
 		}
 
 		// create a new map for storing the value.
-		cbkt.value = make(map[string][]byte)
+		cbkt.Value = make(map[string][]byte)
 
 		// deep copy the map values.
-		for k, v := range bkt.value {
-			cbkt.value[k] = v
+		for k, v := range bkt.Value {
+			cbkt.Value[k] = v
 		}
 
 		// add the bucket to the new state.
-		cpy.buckets = append(cpy.buckets, cbkt)
+		cpy.Buckets = append(cpy.Buckets, cbkt)
 	}
 
 	return cpy

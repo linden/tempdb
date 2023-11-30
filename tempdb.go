@@ -16,20 +16,20 @@ var _ walletdb.DB = (*DB)(nil)
 var Logger *slog.Logger
 
 type DB struct {
-	path  string
-	state *State
+	Path  string
+	State *State
 }
 
 func (db *DB) BeginReadTx() (walletdb.ReadTx, error) {
 	Logger.Debug("begin read transaction")
 
-	return newTransaction(db.state), nil
+	return newTransaction(db.State), nil
 }
 
 func (db *DB) BeginReadWriteTx() (walletdb.ReadWriteTx, error) {
 	Logger.Debug("begin read/write transaction")
 
-	return newTransaction(db.state), nil
+	return newTransaction(db.State), nil
 }
 
 func (db *DB) View(f func(tx walletdb.ReadTx) error, reset func()) error {
@@ -61,12 +61,8 @@ func (db *DB) Update(fn func(tx walletdb.ReadWriteTx) error, reset func()) error
 	}
 
 	// cast to a TempDB transaction.
-	ttx, ok := tx.(*Transaction)
-	if !ok {
-		return errors.New("transaction is not a tempdb transaction")
-	}
-
-	if ttx.rollback {
+	ttx := tx.(*Transaction)
+	if ttx.Rolledback {
 		return nil
 	}
 
@@ -102,8 +98,8 @@ func New(args ...any) (walletdb.DB, error) {
 	}
 
 	return &DB{
-		path:  path,
-		state: &State{},
+		Path:  path,
+		State: &State{},
 	}, nil
 }
 

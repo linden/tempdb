@@ -72,6 +72,12 @@ func (db *DB) Update(fn func(tx walletdb.ReadWriteTx) error, reset func()) error
 	return tx.Commit()
 }
 
+func (db *DB) Batch(fn func(tx walletdb.ReadWriteTx) error) error {
+	Logger.Debug("new batch")
+
+	return db.Update(fn, func() {})
+}
+
 func (sl *DB) Close() error {
 	return nil
 }

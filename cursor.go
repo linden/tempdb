@@ -18,7 +18,7 @@ type Cursor struct {
 }
 
 func (c *Cursor) get(index int) ([]byte, []byte) {
-	if index >= len(c.keys) {
+	if index < 0 || index >= len(c.keys) {
 		return nil, nil
 	}
 

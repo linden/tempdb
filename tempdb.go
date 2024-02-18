@@ -57,6 +57,7 @@ func (db *DB) Update(fn func(tx walletdb.ReadWriteTx) error, reset func()) error
 
 	err = fn(tx)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 

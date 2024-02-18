@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"sync"
 
 	"github.com/btcsuite/btcwallet/walletdb"
 )
@@ -18,18 +19,19 @@ var Logger *slog.Logger
 type DB struct {
 	Path  string
 	State *State
+	lock  sync.Mutex
 }
 
 func (db *DB) BeginReadTx() (walletdb.ReadTx, error) {
 	Logger.Debug("begin read transaction")
 
-	return newTransaction(db.State), nil
+	return newTransaction(db.State, nil), nil
 }
 
 func (db *DB) BeginReadWriteTx() (walletdb.ReadWriteTx, error) {
 	Logger.Debug("begin read/write transaction")
 
-	return newTransaction(db.State), nil
+	return newTransaction(db.State, &db.lock), nil
 }
 
 func (db *DB) View(f func(tx walletdb.ReadTx) error, reset func()) error {

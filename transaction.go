@@ -2,11 +2,14 @@ package tempdb
 
 import (
 	"bytes"
+	"sync"
 
 	"github.com/btcsuite/btcwallet/walletdb"
 )
 
 type Transaction struct {
+	lock *sync.Mutex
+
 	State  *State
 	cursor *State
 
@@ -82,7 +85,18 @@ func (tx *Transaction) DeleteTopLevelBucket(key []byte) error {
 	return nil
 }
 
+func (tx *Transaction) unlock() {
+	if tx.lock != nil {
+		tx.lock.Unlock()
+
+		// prevent duplicate unlocks.
+		tx.lock = nil
+	}
+}
+
 func (tx *Transaction) Commit() error {
+	defer tx.unlock()
+
 	Logger.Debug("transaction commit", "transaction", tx, "transaction ID", tx.ID)
 
 	if tx.Rolledback {
@@ -104,6 +118,8 @@ func (tx *Transaction) OnCommit(f func()) {
 }
 
 func (tx *Transaction) Rollback() error {
+	defer tx.unlock()
+
 	Logger.Debug("transaction rollback", "transaction", tx, "transaction ID", tx.ID)
 
 	if tx.Rolledback {
@@ -132,9 +148,15 @@ func (tx *Transaction) createBucket(key []byte, parent BucketID) *Bucket {
 	return &bkt
 }
 
-func newTransaction(state *State) *Transaction {
+func newTransaction(state *State, lock *sync.Mutex) *Transaction {
+	if lock != nil {
+		lock.Lock()
+	}
+
 	// create a new transaction.
 	tx := &Transaction{
+		lock: lock,
+
 		cursor: state,
 		ID:     state.nextTX,
 	}

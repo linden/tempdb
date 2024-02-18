@@ -57,6 +57,11 @@ func (tx *Transaction) ForEachBucket(f func(key []byte) error) error {
 func (tx *Transaction) CreateTopLevelBucket(key []byte) (walletdb.ReadWriteBucket, error) {
 	Logger.Debug("creating top-level bucket", "bucket key", key, "transaction ID", tx.ID)
 
+	bkt := tx.ReadWriteBucket(key)
+	if bkt != nil {
+		return bkt, nil
+	}
+
 	return tx.createBucket(key, RootBucketID), nil
 }
 
